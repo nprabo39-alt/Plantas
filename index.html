@@ -1,0 +1,272 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mi jardín</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f1f7ed;
+      color: #203326;
+    }
+
+    header {
+      padding: 28px 16px;
+      text-align: center;
+      background: #287a45;
+      color: white;
+    }
+
+    main {
+      width: min(850px, 94%);
+      margin: 24px auto;
+    }
+
+    section, .planta {
+      background: white;
+      padding: 18px;
+      margin-bottom: 18px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px #00000012;
+    }
+
+    label {
+      display: block;
+      margin: 12px 0 5px;
+      font-weight: bold;
+    }
+
+    input, select, button {
+      width: 100%;
+      padding: 11px;
+      margin-top: 5px;
+      border: 1px solid #b8c8b7;
+      border-radius: 7px;
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      background: #287a45;
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background: #1d6035;
+    }
+
+    .boton-borrar {
+      background: #a53d3d;
+      margin-top: 8px;
+    }
+
+    .boton-borrar:hover {
+      background: #812c2c;
+    }
+
+    .planta img {
+      display: block;
+      width: min(100%, 260px);
+      max-height: 220px;
+      margin: 12px 0;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+
+    .vacio {
+      color: #526453;
+    }
+
+    footer {
+      padding: 18px;
+      text-align: center;
+      color: #526453;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>🌱 Mi jardín</h1>
+    <p>Guarda tus plantas y registra sus cuidados.</p>
+  </header>
+
+  <main>
+    <section>
+      <h2>Agregar una planta</h2>
+
+      <form id="formulario">
+        <label for="nombre">Nombre de la planta</label>
+        <input id="nombre" required placeholder="Ejemplo: mi cactus">
+
+        <label for="tipo">Tipo de planta</label>
+        <select id="tipo">
+          <option value="general">Otra planta</option>
+          <option value="cactus">Cactus o suculenta</option>
+          <option value="tropical">Planta tropical</option>
+          <option value="aromatica">Planta aromática</option>
+        </select>
+
+        <label for="foto">Foto (opcional)</label>
+        <input id="foto" type="file" accept="image/*">
+
+        <button type="submit">Guardar planta</button>
+      </form>
+
+      <p id="aviso" aria-live="polite"></p>
+    </section>
+
+    <section>
+      <h2>Mis plantas</h2>
+      <div id="lista"></div>
+    </section>
+  </main>
+
+  <footer>
+    Los consejos son generales. Cada planta puede necesitar cuidados distintos.
+  </footer>
+
+  <script>
+    const formulario = document.querySelector("#formulario");
+    const lista = document.querySelector("#lista");
+    const aviso = document.querySelector("#aviso");
+
+    let plantas = [];
+
+    try {
+      plantas = JSON.parse(localStorage.getItem("misPlantas")) || [];
+    } catch {
+      plantas = [];
+    }
+
+    function guardarPlantas() {
+      localStorage.setItem("misPlantas", JSON.stringify(plantas));
+      mostrarPlantas();
+    }
+
+    function obtenerConsejo(tipo) {
+      if (tipo === "cactus") {
+        return "Revisa que la tierra esté seca antes de volver a regar. Necesita buena luz.";
+      }
+
+      if (tipo === "tropical") {
+        return "Revisa la tierra con frecuencia y evita que quede completamente empapada.";
+      }
+
+      if (tipo === "aromatica") {
+        return "Muchas plantas aromáticas necesitan buena luz. Revisa la tierra antes de regar.";
+      }
+
+      return "Toca la tierra antes de regar. La cantidad de agua depende de la especie y del lugar.";
+    }
+
+    function mostrarPlantas() {
+      lista.replaceChildren();
+
+      if (plantas.length === 0) {
+        const mensaje = document.createElement("p");
+        mensaje.className = "vacio";
+        mensaje.textContent = "Todavía no agregaste plantas.";
+        lista.appendChild(mensaje);
+        return;
+      }
+
+      plantas.forEach((planta, indice) => {
+        const tarjeta = document.createElement("article");
+        tarjeta.className = "planta";
+
+        const titulo = document.createElement("h3");
+        titulo.textContent = planta.nombre;
+
+        const tipo = document.createElement("p");
+        tipo.textContent = "Tipo: " + planta.tipoNombre;
+
+        const consejo = document.createElement("p");
+        consejo.textContent = "Consejo: " + obtenerConsejo(planta.tipo);
+
+        const riego = document.createElement("p");
+        riego.textContent = planta.ultimoRiego
+          ? "Último riego: " + planta.ultimoRiego
+          : "Aún no registraste un riego.";
+
+        tarjeta.append(titulo, tipo, consejo, riego);
+
+        if (planta.foto) {
+          const imagen = document.createElement("img");
+          imagen.src = planta.foto;
+          imagen.alt = "Foto de " + planta.nombre;
+          tarjeta.appendChild(imagen);
+        }
+
+        const botonRiego = document.createElement("button");
+        botonRiego.textContent = "Registrar riego";
+        botonRiego.addEventListener("click", () => {
+          plantas[indice].ultimoRiego =
+            new Date().toLocaleString("es-PE");
+          guardarPlantas();
+        });
+
+        const botonBorrar = document.createElement("button");
+        botonBorrar.textContent = "Eliminar planta";
+        botonBorrar.className = "boton-borrar";
+        botonBorrar.addEventListener("click", () => {
+          plantas.splice(indice, 1);
+          guardarPlantas();
+        });
+
+        tarjeta.append(botonRiego, botonBorrar);
+        lista.appendChild(tarjeta);
+      });
+    }
+
+    formulario.addEventListener("submit", evento => {
+      evento.preventDefault();
+
+      const nombre = document.querySelector("#nombre").value.trim();
+      const selector = document.querySelector("#tipo");
+      const tipo = selector.value;
+      const tipoNombre = selector.options[selector.selectedIndex].text;
+      const archivo = document.querySelector("#foto").files[0];
+
+      function agregarPlanta(foto) {
+        plantas.push({
+          nombre,
+          tipo,
+          tipoNombre,
+          foto,
+          ultimoRiego: ""
+        });
+
+        guardarPlantas();
+        formulario.reset();
+        aviso.textContent = "Planta guardada.";
+      }
+
+      if (archivo) {
+        const lector = new FileReader();
+
+        lector.onload = () => agregarPlanta(lector.result);
+        lector.onerror = () => {
+          aviso.textContent = "No se pudo cargar la foto. Intenta con otra.";
+        };
+
+        lector.readAsDataURL(archivo);
+      } else {
+        agregarPlanta("");
+      }
+    });
+
+    mostrarPlantas();
+  </script>
+</body>
+</html>
